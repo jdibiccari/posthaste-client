@@ -1,0 +1,35 @@
+{
+  "name": "posthaste-client",
+  "version": "0.0.1",
+  "description": "A websocket chat client build on node.js",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prestart": "webpack",
+    "start": "node ./server.js"
+  },
+  "keywords": [
+    "websockets",
+    "chat",
+    "client"
+  ],
+  "author": "Janel diBiccari",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.14.0",
+    "html-webpack-plugin": "^2.22.0",
+    "react": "^15.3.1",
+    "react-dom": "^15.3.1",
+    "socket.io": "^1.4.8"
+  },
+  "devDependencies": {
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-preset-react": "^6.11.1",
+    "css-loader": "^0.24.0",
+    "node-sass": "^3.8.0",
+    "sass-loader": "^4.0.0",
+    "style-loader": "^0.13.1",
+    "webpack": "^1.13.2"
+  }
+}
