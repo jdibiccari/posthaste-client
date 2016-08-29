@@ -12,14 +12,14 @@ const ChatApp = React.createClass({
 		return {
 			username: '',
 			userCount: 0,
-			notifications: [],
+			users: [],
 			messages: []
 		}
 	},
 	componentDidMount: function() {
 		socket.on('init', this._initialize),
 		socket.on('new msg', this._addMessage),
-		socket.on('notify', this._updateNotifications),
+		socket.on('notify', this._updateUsers),
 		socket.on('update count', this._updateUserCount)
 	},
 	_initialize: function(data) {
@@ -33,9 +33,9 @@ const ChatApp = React.createClass({
     		messages: this.state.messages.concat(message)
     	})
 	},
-	_updateNotifications: function(notification) {
+	_updateUsers: function(user) {
 		this.setState({
-    		notifications: this.state.notifications.concat(notification)
+    		users: this.state.users.concat(user)
     	})
 	},
 	_updateUserCount: function(count) {
@@ -44,13 +44,11 @@ const ChatApp = React.createClass({
     	})
 	},
 	loginUser: function(user) {
-		console.log('this should still work' + user)
 		this.setState({username: user})
 		socket.emit('login', user)
 	},
 	sendMessage: function(message) {
 		socket.emit('new msg', message)
-		console.log(message)
 	},
 	render: function(){
 		return (
@@ -60,7 +58,7 @@ const ChatApp = React.createClass({
 				</div>
 				<MessageList messages={this.state.messages} />
 				<MessageBox sendMessage={this.sendMessage}/>
-				<NotificationList notifications={this.state.notifications} userCount={this.state.userCount} username={this.state.username} loginUser={this.loginUser} />
+				<UserList users={this.state.users} userCount={this.state.userCount} username={this.state.username} loginUser={this.loginUser} />
 			</div>
 		)
 	}
@@ -104,25 +102,28 @@ const MessageBox = React.createClass({
 			chat: e.target.value
 		});
 	},
-	handleSubmit: function(){
+	handleSubmit: function(e){
+		e.preventDefault()
 		this.props.sendMessage(this.state.chat)
 		this.setState({ chat: '' })
 	},
 	render: function(){
 		return (
 			<div className='input-container'>
-				<button onClick={this.handleSubmit} id='send-msg'> + </button>
-				<input type='text' value={this.state.chat} placeholder='Start chatting' onChange={this.handleChange} />
+				<form onSubmit={this.handleSubmit}>
+					<button type='submit' id='send-msg'> + </button>
+					<input type='text' value={this.state.chat} placeholder='Start chatting' onChange={this.handleChange} />
+				</form>
 			</div>
 		)
 	}
 })
 
-const NotificationList = React.createClass({
+const UserList = React.createClass({
 	render: function(){
 		let child = null
-		var listItems = this.props.notifications.map((notification, i) => {
-			return <li className='notification' key={i}> {notification} </li>
+		var listItems = this.props.users.map((user) => {
+			return <li className='user' key={user._id}> {user.username} </li>
 		})
 
 		if (this.props.username) {
@@ -133,8 +134,8 @@ const NotificationList = React.createClass({
 
 		return (
 			<div className='user-sidebar'>
-				{child}
-				<div className='notifications'>
+					{child}
+				<div className='users'>
 					<ul>
 						{listItems}
 					</ul>
@@ -148,14 +149,13 @@ const NotificationList = React.createClass({
 const IdentityReminder = React.createClass({
 	render: function(){
 		return (
-			<span>
-				You are signed in as {this.props.username}
-			</span>
+			<div className='login-container'>
+				<span> You are signed in as {this.props.username}</span>
+			</div>
 		)
 	}
 })
 
-// Username component
 const Login = React.createClass({
 	getInitialState: function(){
 		return {
@@ -167,16 +167,18 @@ const Login = React.createClass({
 			newUser: e.target.value
 		})
 	},
-	handleSubmit: function(){
-		console.log('submit')
+	handleSubmit: function(e){
+		e.preventDefault()
 		this.props.loginUser(this.state.newUser)
 		this.setState({ newUser: '' })
 	},
 	render: function(){
 		return (
 			<div className='login-container'>
-				<button onClick={this.handleSubmit} id='login-submit'> + </button>
-				<input type='text' value={this.state.newUser} placeholder='Enter a username' onChange={this.handleChange} />
+				<form onSubmit={this.handleSubmit}>
+					<button type='submit' id='login-submit'> + </button>
+					<input type='text' value={this.state.newUser} placeholder='Enter a username' onChange={this.handleChange} />
+				</form>
 			</div>
 		)
 	}

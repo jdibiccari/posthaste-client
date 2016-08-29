@@ -80,13 +80,18 @@ button {
   float: right;
 }
 
-.notifications {
+.users {
   width: 250px;
   float: right;
   border-radius: 6px;
-  background-color: $blue;
   min-height: 100px;
-  .notification {
+  ul {
+    padding-left: 10px;
+  }
+  .user-count {
+    padding-left: 10px;
+  }
+  .user {
     list-style-type: none;
   }
 }
