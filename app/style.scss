@@ -8,6 +8,10 @@ body {
   font-family: 'Open Sans', sans-serif;
 }
 
+.hidden {
+  visibility: hidden;
+}
+
 .input-container {
   position: fixed;
   bottom: 25px;
@@ -45,13 +49,17 @@ button {
 }
 
 .chat {
-  border-radius: 25px;
   width: 300px;
-  padding-left: 10px;
   margin-bottom: 10px;
   list-style-type: none;
-  line-height: 3;
-  background-color: $green;
+  .chat-msg {
+    margin-left: 10px;
+    border-bottom: solid 1px $smoke;
+  }
+  .chat-user {
+    color: $green;
+    font-weight: 600;
+  }
   .tooltiptext {
     visibility: hidden;
     font-size: 12px;
@@ -68,15 +76,18 @@ button {
 }
 
 .user-sidebar {
-  float: right;
   width: 250px;
-  .users {
-    border-radius: 6px;
-    background-color: $blue;
-    min-height: 100px;
-    .notification {
-      list-style-type: none;
-    }
+  float: right;
+}
+
+.notifications {
+  width: 250px;
+  float: right;
+  border-radius: 6px;
+  background-color: $blue;
+  min-height: 100px;
+  .notification {
+    list-style-type: none;
   }
 }
 /* Show the tooltip text when you mouse over the tooltip container */

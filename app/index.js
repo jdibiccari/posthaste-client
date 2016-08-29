@@ -1,5 +1,8 @@
 const React = require('react')
 const ReactDOM = require('react-dom')
+const dateFormat = require('dateformat')
+// Make this more easily configurable
+const socket = io.connect('http://localhost:3700')
 
 require("./style.scss")
 
@@ -8,45 +11,84 @@ const ChatApp = React.createClass({
 	getInitialState: function(){
 		return {
 			username: '',
-			users: [],
+			userCount: 0,
+			notifications: [],
+			messages: []
 		}
+	},
+	componentDidMount: function() {
+		socket.on('init', this._initialize),
+		socket.on('new msg', this._addMessage),
+		socket.on('notify', this._updateNotifications),
+		socket.on('update count', this._updateUserCount)
+	},
+	_initialize: function(data) {
+		this.setState({
+			userCount: data.connections.length,
+			messages: data.messages
+		})
+	},
+	_addMessage: function(message) {
+		this.setState({
+    		messages: this.state.messages.concat(message)
+    	})
+	},
+	_updateNotifications: function(notification) {
+		this.setState({
+    		notifications: this.state.notifications.concat(notification)
+    	})
+	},
+	_updateUserCount: function(count) {
+		this.setState({
+    		userCount: count
+    	})
+	},
+	loginUser: function(user) {
+		console.log('this should still work' + user)
+		this.setState({username: user})
+		socket.emit('login', user)
+	},
+	sendMessage: function(message) {
+		socket.emit('new msg', message)
+		console.log(message)
 	},
 	render: function(){
 		return (
 			<div className='chat-container'>
-				<h1>Posthaste</h1>
-				<MessageContainer />
-				<UserContainer users={this.state.users} username={this.state.username} />
+				<div className='header'>
+					<h1>Posthaste</h1>
+				</div>
+				<MessageList messages={this.state.messages} />
+				<MessageBox sendMessage={this.sendMessage}/>
+				<NotificationList notifications={this.state.notifications} userCount={this.state.userCount} username={this.state.username} loginUser={this.loginUser} />
 			</div>
 		)
 	}
 })
 
 
-const MessageContainer = React.createClass({
-	getInitialState: function(){
+const MessageList = React.createClass({
+	getDefaultProps: function(){
 		return {
-			messages: ['test', 'test'],
+			username: '',
+			messages: []
 		}
 	},
 	render: function(){
-		return (
-			<div className='msg-container'>
-				<MessageList chats={this.state.messages} />
-			</div>
-		)
-	}
-})
-
-const MessageList = React.createClass({
-	render: function(){
-		var listItems = this.props.chats.map(function(msg, i){
-			return <li key={i} className='chat'> {msg} </li>
+		const listItems = this.props.messages.map(msg => {
+			const time = dateFormat(msg.created_at, "longTime")
+			return <li key={msg._id} className='chat'>
+					<span className='chat-user'>{msg.user.username}</span>
+					<span className='chat-msg'>{msg.msg}</span>
+					<span className='tooltiptext'>{time}</span>
+				</li>
 		})
 		return (
-			<ul className='messages'>
-				{listItems}
-			</ul>
+			<div className='msg-container'>
+				<ul className='messages'>
+					{listItems}
+				</ul>
+			</div>
 		)
 	}
 })
@@ -57,60 +99,58 @@ const MessageBox = React.createClass({
 			chat: ''
 		}
 	},
-	updateChat: function(e){
+	handleChange: function(e){
 		this.setState({
 			chat: e.target.value
 		});
 	},
+	handleSubmit: function(){
+		this.props.sendMessage(this.state.chat)
+		this.setState({ chat: '' })
+	},
 	render: function(){
 		return (
 			<div className='input-container'>
-				<button onClick={this.handleLogin} id='send-msg'> + </button>
-				<input type='text' value={this.state.chat} placeholder='Message me' onChange={this.updateChat} />
+				<button onClick={this.handleSubmit} id='send-msg'> + </button>
+				<input type='text' value={this.state.chat} placeholder='Start chatting' onChange={this.handleChange} />
 			</div>
 		)
 	}
 })
 
-const UserContainer = React.createClass({
-    getInitialState: function(){
-      return {
-        username: '',
-        users: []
-      }
-    },
-    addUser: function(username) {
-    	this.setState({
-    		users: this.state.users.concat(username)
-    	})
-    },
-    render: function(){
-      return (
-        <div className='user-sidebar' >
-        	<Login addUser={this.state.addUser} />
-          	<UserList users={this.state.users} />
-        </div>
-      )
-    }
+const NotificationList = React.createClass({
+	render: function(){
+		let child = null
+		var listItems = this.props.notifications.map((notification, i) => {
+			return <li className='notification' key={i}> {notification} </li>
+		})
+
+		if (this.props.username) {
+			child = <IdentityReminder username={this.props.username} />
+		} else {
+			child = <Login loginUser={this.props.loginUser} username={this.props.username} />
+		}
+
+		return (
+			<div className='user-sidebar'>
+				{child}
+				<div className='notifications'>
+					<ul>
+						{listItems}
+					</ul>
+					<div><span className='user-count'>{this.props.userCount}</span> user(s) connected</div>
+				</div>
+			</div>
+		)
+	}
 })
 
-const UserList = React.createClass({
-	getDefaultProps: function(){
-		return {
-			users: []
-		}
-	},
+const IdentityReminder = React.createClass({
 	render: function(){
-		var listItems = this.props.users.map(function(user){
-			return <li> {user} </li>
-		})
 		return (
-			<div className='users'>
-				<ul>
-					{listItems}
-				</ul>
-				<div><span className='user-count'></span> user(s) connected</div>
-			</div>
+			<span>
+				You are signed in as {this.props.username}
+			</span>
 		)
 	}
 })
@@ -122,25 +162,23 @@ const Login = React.createClass({
 			newUser: ''
 		}
 	},
-	updateNewUser: function(e){
+	handleChange: function(e){
 		this.setState({
 			newUser: e.target.value
-		});
-	},
-	handleLogin: function(){
-		this.props.addUser(this.state.newUser)
-		// Reset to none
-		this.setState({
-			newUser: ''
 		})
+	},
+	handleSubmit: function(){
+		console.log('submit')
+		this.props.loginUser(this.state.newUser)
+		this.setState({ newUser: '' })
 	},
 	render: function(){
 		return (
 			<div className='login-container'>
-				<button onClick={this.handleLogin} id='login-submit'> + </button>
-				<input type='text' value={this.state.newUser} placeholder='Enter a username' onChange={this.updateNewUser} />
+				<button onClick={this.handleSubmit} id='login-submit'> + </button>
+				<input type='text' value={this.state.newUser} placeholder='Enter a username' onChange={this.handleChange} />
 			</div>
-			)
+		)
 	}
 })
 

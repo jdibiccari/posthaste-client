@@ -15,10 +15,6 @@ app.get('/', (req, res) => {
   res.render('build/index.html', {})
 })
 
-// app.get('/login', (req, res) => {
-//   res.render('login.html', {})
-// })
-
 server.listen(port, () => {
   console.log(`Listening on port ${port}`)
 })

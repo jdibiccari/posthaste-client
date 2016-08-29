@@ -14,16 +14,18 @@
     "client"
   ],
   "author": "Janel diBiccari",
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/jdibiccari/posthaste-client"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jdibiccari/posthaste-client"
   },
   "license": "ISC",
   "dependencies": {
+    "dateformat": "^1.0.12",
     "express": "^4.14.0",
     "html-webpack-plugin": "^2.22.0",
     "react": "^15.3.1",
     "react-dom": "^15.3.1",
+    "react-toggle-display": "^2.1.1",
     "socket.io": "^1.4.8"
   },
   "devDependencies": {
