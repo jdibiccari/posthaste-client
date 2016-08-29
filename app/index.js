@@ -1,5 +1,6 @@
 const React = require('react')
 const ReactDOM = require('react-dom')
+const ReactEmoji = require('react-emoji')
 const dateFormat = require('dateformat')
 // Make this more easily configurable
 const socket = io.connect('http://localhost:3700')
@@ -25,7 +26,8 @@ const ChatApp = React.createClass({
 	_initialize: function(data) {
 		this.setState({
 			userCount: data.connections.length,
-			messages: data.messages
+			messages: data.messages.reverse(),
+			users: data.connections
 		})
 	},
 	_addMessage: function(message) {
@@ -33,9 +35,9 @@ const ChatApp = React.createClass({
     		messages: this.state.messages.concat(message)
     	})
 	},
-	_updateUsers: function(user) {
+	_updateUsers: function(users) {
 		this.setState({
-    		users: this.state.users.concat(user)
+    		users: users
     	})
 	},
 	_updateUserCount: function(count) {
@@ -57,7 +59,7 @@ const ChatApp = React.createClass({
 					<h1>Posthaste</h1>
 				</div>
 				<MessageList messages={this.state.messages} />
-				<MessageBox sendMessage={this.sendMessage}/>
+				<MessageBox sendMessage={this.sendMessage} username={this.state.username} />
 				<UserList users={this.state.users} userCount={this.state.userCount} username={this.state.username} loginUser={this.loginUser} />
 			</div>
 		)
@@ -66,18 +68,22 @@ const ChatApp = React.createClass({
 
 
 const MessageList = React.createClass({
-	getDefaultProps: function(){
+	componentDidUpdate: function() {
+		const node = ReactDOM.findDOMNode(this)
+		node.scrollTop = node.scrollHeight
+	},
+	getDefaultProps: function() {
 		return {
 			username: '',
 			messages: []
 		}
 	},
-	render: function(){
+	render: function() {
 		const listItems = this.props.messages.map(msg => {
 			const time = dateFormat(msg.created_at, "longTime")
 			return <li key={msg._id} className='chat'>
-					<span className='chat-user'>{msg.user.username}</span>
-					<span className='chat-msg'>{msg.msg}</span>
+					<span className='chat-user' style={{color: msg.user.color}}>{msg.user.username}</span>
+					<span className='chat-msg'>{ReactEmoji.emojify(msg.msg)}</span>
 					<span className='tooltiptext'>{time}</span>
 				</li>
 		})
@@ -108,11 +114,14 @@ const MessageBox = React.createClass({
 		this.setState({ chat: '' })
 	},
 	render: function(){
+		if (!this.props.username) {
+			return null
+		}
 		return (
 			<div className='input-container'>
 				<form onSubmit={this.handleSubmit}>
 					<button type='submit' id='send-msg'> + </button>
-					<input type='text' value={this.state.chat} placeholder='Start chatting' onChange={this.handleChange} />
+					<input type='text' value={this.state.chat} placeholder='Chat away...' onChange={this.handleChange} />
 				</form>
 			</div>
 		)
