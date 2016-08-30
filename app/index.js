@@ -22,6 +22,7 @@ const ChatApp = React.createClass({
 		socket.on('new msg', this._addMessage),
 		socket.on('notify', this._updateUsers),
 		socket.on('update count', this._updateUserCount)
+		socket.on('logout', this._logoutUser)
 	},
 	_initialize: function(data) {
 		this.setState({
@@ -45,11 +46,14 @@ const ChatApp = React.createClass({
     		userCount: count
     	})
 	},
-	loginUser: function(user) {
+	_logoutUser: function() {
+		this.setState({username: ''})
+	},
+	_loginUser: function(user) {
 		this.setState({username: user})
 		socket.emit('login', user)
 	},
-	sendMessage: function(message) {
+	_sendMessage: function(message) {
 		socket.emit('new msg', message)
 	},
 	render: function(){
@@ -58,15 +62,30 @@ const ChatApp = React.createClass({
 				<div className='header'>
 					<h1>Posthaste</h1>
 				</div>
-				<MessageList messages={this.state.messages} />
-				<MessageBox sendMessage={this.sendMessage} username={this.state.username} />
-				<UserList users={this.state.users} userCount={this.state.userCount} username={this.state.username} loginUser={this.loginUser} />
+				<MessageContainer
+					messages={this.state.messages}
+					sendMessage={this._sendMessage}
+					username={this.state.username} />
+				<UserContainer
+					users={this.state.users}
+					userCount={this.state.userCount}
+					username={this.state.username}
+					loginUser={this._loginUser} />
 			</div>
 		)
 	}
 })
 
-
+const MessageContainer = React.createClass({
+	render: function(){
+		return (
+			<div className='msg-container'>
+				<MessageList messages={this.props.messages} />
+				<MessageBox sendMessage={this.props.sendMessage} username={this.props.username} />
+			</div>
+		)
+	}
+})
 const MessageList = React.createClass({
 	componentDidUpdate: function() {
 		const node = ReactDOM.findDOMNode(this)
@@ -81,17 +100,15 @@ const MessageList = React.createClass({
 	render: function() {
 		const listItems = this.props.messages.map(msg => {
 			const time = dateFormat(msg.created_at, "longTime")
-			return <li key={msg._id} className='chat'>
+			return <div key={msg._id} className='chat'>
 					<span className='chat-user' style={{color: msg.user.color}}>{msg.user.username}</span>
 					<span className='chat-msg'>{ReactEmoji.emojify(msg.msg)}</span>
 					<span className='tooltiptext'>{time}</span>
-				</li>
+				</div>
 		})
 		return (
-			<div className='msg-container'>
-				<ul className='messages'>
-					{listItems}
-				</ul>
+			<div className='messages'>
+				{listItems}
 			</div>
 		)
 	}
@@ -110,8 +127,10 @@ const MessageBox = React.createClass({
 	},
 	handleSubmit: function(e){
 		e.preventDefault()
-		this.props.sendMessage(this.state.chat)
-		this.setState({ chat: '' })
+		if (this.state.chat !== '') {
+			this.props.sendMessage(this.state.chat)
+			this.setState({ chat: '' })
+		}
 	},
 	render: function(){
 		if (!this.props.username) {
@@ -128,12 +147,9 @@ const MessageBox = React.createClass({
 	}
 })
 
-const UserList = React.createClass({
+const UserContainer = React.createClass({
 	render: function(){
 		let child = null
-		var listItems = this.props.users.map((user) => {
-			return <li className='user' key={user._id}> {user.username} </li>
-		})
 
 		if (this.props.username) {
 			child = <IdentityReminder username={this.props.username} />
@@ -143,13 +159,24 @@ const UserList = React.createClass({
 
 		return (
 			<div className='user-sidebar'>
-					{child}
-				<div className='users'>
-					<ul>
-						{listItems}
-					</ul>
-					<div><span className='user-count'>{this.props.userCount}</span> user(s) connected</div>
-				</div>
+				{child}
+				<UserList users={this.props.users} userCount={this.props.userCount} />
+			</div>
+		)
+	}
+})
+
+const UserList = React.createClass({
+	render: function(){
+		var listItems = this.props.users.map((user) => {
+			return <li className='user' key={user._id}> {user.username} is on</li>
+		})
+		return (
+			<div className='users'>
+				<ul>
+					{listItems}
+				</ul>
+				<div><span className='user-count'>{this.props.userCount}</span> user(s) connected</div>
 			</div>
 		)
 	}
@@ -159,7 +186,7 @@ const IdentityReminder = React.createClass({
 	render: function(){
 		return (
 			<div className='login-container'>
-				<span> You are signed in as {this.props.username}</span>
+				<span> You are signed in as {this.props.username} </span>
 			</div>
 		)
 	}

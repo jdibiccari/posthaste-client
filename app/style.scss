@@ -12,21 +12,20 @@ body {
   visibility: hidden;
 }
 
-.input-container {
-  position: fixed;
-  bottom: 25px;
-  width: 99%;
-}
-
 .msg-container {
   display: inline-block;
   width: 75%;
-  overflow-y: auto;
-  max-height: 400px;
+  .messages {
+    max-height: 400px;
+    overflow-y: auto;
+  }
 }
 
 .login-container {
   margin: 10px;
+  span {
+    font-style: italic;
+  }
 }
 
 input[type="text"] {
@@ -56,14 +55,15 @@ button {
 }
 
 .chat {
+  display: table-row;
   width: 300px;
-  margin-bottom: 10px;
-  list-style-type: none;
   .chat-msg {
-    margin-left: 10px;
-    border-bottom: solid 1px $smoke;
+    display: table-cell;
+    padding-bottom: 3px;
   }
   .chat-user {
+    display: table-cell;
+    padding-right: 10px;
     font-weight: 600;
   }
   .tooltiptext {
@@ -79,7 +79,6 @@ button {
     position: relative;
     display: inline-block;
     float: right;
-    left: 35%;
   }
 }
 
