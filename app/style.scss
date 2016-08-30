@@ -12,11 +12,16 @@ body {
   visibility: hidden;
 }
 
+.highlight {
+  background-color: rgba(255, 230, 0, 0.5);
+  border-radius: 3px;
+}
+
 .msg-container {
   display: inline-block;
   width: 75%;
   .messages {
-    max-height: 400px;
+    height: 400px;
     overflow-y: auto;
   }
 }

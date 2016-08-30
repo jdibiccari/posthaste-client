@@ -12,21 +12,20 @@ const ChatApp = React.createClass({
 	getInitialState: function(){
 		return {
 			username: '',
-			userCount: 0,
 			users: [],
-			messages: []
+			messages: [],
+			unseen: null
 		}
 	},
 	componentDidMount: function() {
 		socket.on('init', this._initialize),
 		socket.on('new msg', this._addMessage),
 		socket.on('notify', this._updateUsers),
-		socket.on('update count', this._updateUserCount)
 		socket.on('logout', this._logoutUser)
+		socket.on('unseen messages', this._updateUnseen)
 	},
 	_initialize: function(data) {
 		this.setState({
-			userCount: data.connections.length,
 			messages: data.messages.reverse(),
 			users: data.connections
 		})
@@ -36,14 +35,14 @@ const ChatApp = React.createClass({
     		messages: this.state.messages.concat(message)
     	})
 	},
+	_updateUnseen: function(id) {
+		this.setState({
+    		unseen: id
+    	})
+	},
 	_updateUsers: function(users) {
 		this.setState({
     		users: users
-    	})
-	},
-	_updateUserCount: function(count) {
-		this.setState({
-    		userCount: count
     	})
 	},
 	_logoutUser: function() {
@@ -64,11 +63,11 @@ const ChatApp = React.createClass({
 				</div>
 				<MessageContainer
 					messages={this.state.messages}
+					unseen={this.state.unseen}
 					sendMessage={this._sendMessage}
 					username={this.state.username} />
 				<UserContainer
 					users={this.state.users}
-					userCount={this.state.userCount}
 					username={this.state.username}
 					loginUser={this._loginUser} />
 			</div>
@@ -80,16 +79,21 @@ const MessageContainer = React.createClass({
 	render: function(){
 		return (
 			<div className='msg-container'>
-				<MessageList messages={this.props.messages} />
+				<MessageList messages={this.props.messages} unseen={this.props.unseen}/>
 				<MessageBox sendMessage={this.props.sendMessage} username={this.props.username} />
 			</div>
 		)
 	}
 })
 const MessageList = React.createClass({
-	componentDidUpdate: function() {
+	componentDidUpdate: function(prevProps) {
 		const node = ReactDOM.findDOMNode(this)
-		node.scrollTop = node.scrollHeight
+		if (this.props.unseen && this.props.unseen !== prevProps.unseen) {
+			console.log(this.props.unseen)
+			this.refs.unseen.scrollIntoView(false)
+		} else {
+			node.scrollTop = node.scrollHeight
+		}
 	},
 	getDefaultProps: function() {
 		return {
@@ -99,8 +103,12 @@ const MessageList = React.createClass({
 	},
 	render: function() {
 		const listItems = this.props.messages.map(msg => {
+			let isRef = false
 			const time = dateFormat(msg.created_at, "longTime")
-			return <div key={msg._id} className='chat'>
+			if (this.props.unseen === msg._id) {
+				isRef = true
+			}
+			return <div key={msg._id} ref={isRef? 'unseen' : null} className='chat'>
 					<span className='chat-user' style={{color: msg.user.color}}>{msg.user.username}</span>
 					<span className='chat-msg'>{ReactEmoji.emojify(msg.msg)}</span>
 					<span className='tooltiptext'>{time}</span>
@@ -160,7 +168,7 @@ const UserContainer = React.createClass({
 		return (
 			<div className='user-sidebar'>
 				{child}
-				<UserList users={this.props.users} userCount={this.props.userCount} />
+				<UserList users={this.props.users} userCount={this.props.users.length} />
 			</div>
 		)
 	}
